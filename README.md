@@ -8,7 +8,7 @@
 
 AI 어시스턴트를 통해 Velog 글을 읽고, 검색하고, 작성할 수 있습니다.
 
-> **참고:** 이 프로젝트는 Velog의 비공식 GraphQL API를 사용합니다. Velog의 공식 프로젝트가 아닙니다.
+> **참고:** 이 프로젝트는 Velog의 비공식 GraphQL API를 사용합니다. Velog의 공식 프로젝트가 아닙니다. 이 프로젝트는 [stoneHee99/velog-mcp](https://github.com/stoneHee99/velog-mcp)의 아이디어를 바탕으로 개발되었습니다.
 
 ## 주요 기능
 
