@@ -156,13 +156,14 @@ server.tool(
     is_private: z.boolean().default(false).describe("Whether the post is private"),
     url_slug: z.string().optional().describe("Custom URL slug"),
     series_id: z.string().optional().describe("Series ID to add the post to"),
+    thumbnail: z.string().optional().describe("Thumbnail image URL"),
   },
-  async ({ title, body, tags, is_private, url_slug, series_id }) => {
+  async ({ title, body, tags, is_private, url_slug, series_id, thumbnail }) => {
     const authError = requireAuth();
     if (authError) return authError;
     // url_slug is required by Velog API; auto-generate from title if not provided
     const slug = url_slug ?? title.replace(/[^a-zA-Z0-9가-힣\s-]/g, "").replace(/\s+/g, "-").toLowerCase();
-    const post = await client.writePost({ title, body, tags, is_private, url_slug: slug, series_id });
+    const post = await client.writePost({ title, body, tags, is_private, url_slug: slug, series_id, thumbnail });
     return { content: [{ type: "text", text: JSON.stringify(post, null, 2) }] };
   },
 );
@@ -178,11 +179,12 @@ server.tool(
     is_private: z.boolean().optional().describe("Whether the post is private"),
     url_slug: z.string().optional().describe("New URL slug"),
     series_id: z.string().optional().describe("Series ID"),
+    thumbnail: z.string().optional().describe("New thumbnail image URL"),
   },
-  async ({ id, title, body, tags, is_private, url_slug, series_id }) => {
+  async ({ id, title, body, tags, is_private, url_slug, series_id, thumbnail }) => {
     const authError = requireAuth();
     if (authError) return authError;
-    const post = await client.editPost({ id, title, body, tags, is_private, url_slug, series_id });
+    const post = await client.editPost({ id, title, body, tags, is_private, url_slug, series_id, thumbnail });
     return { content: [{ type: "text", text: JSON.stringify(post, null, 2) }] };
   },
 );
@@ -198,6 +200,37 @@ server.tool(
     if (authError) return authError;
     const result = await client.deletePost(id);
     return { content: [{ type: "text", text: result ? "Post deleted successfully." : "Failed to delete post." }] };
+  },
+);
+
+server.tool(
+  "update_profile",
+  "Update the current user's profile (requires authentication)",
+  {
+    display_name: z.string().optional().describe("New display name (uses current if omitted)"),
+    short_bio: z.string().optional().describe("New short bio (uses current if omitted)"),
+  },
+  async ({ display_name, short_bio }) => {
+    const authError = requireAuth();
+    if (authError) return authError;
+
+    let finalDisplayName = display_name;
+    let finalShortBio = short_bio;
+
+    if (!finalDisplayName || !finalShortBio) {
+      const currentUser = await client.getCurrentUser();
+      if (!currentUser || !currentUser.profile) {
+        return {
+          content: [{ type: "text", text: "Failed to retrieve current user profile for merge." }],
+          isError: true,
+        };
+      }
+      if (!finalDisplayName) finalDisplayName = currentUser.profile.display_name;
+      if (!finalShortBio) finalShortBio = currentUser.profile.short_bio;
+    }
+
+    const profile = await client.updateProfile(finalDisplayName!, finalShortBio!);
+    return { content: [{ type: "text", text: JSON.stringify(profile, null, 2) }] };
   },
 );
 

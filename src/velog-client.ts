@@ -234,6 +234,47 @@ export class VelogClient {
     return data.removePost;
   }
 
+  async getCurrentUser() {
+    const query = `
+      query {
+        currentUser {
+          id
+          username
+          email
+          profile {
+            display_name
+            short_bio
+            thumbnail
+            about
+          }
+        }
+      }
+    `;
+    const data = await this.request<{ currentUser: any }>(query, {}, VELOG_V3_ENDPOINT);
+    return data.currentUser;
+  }
+
+  async updateProfile(displayName: string, shortBio: string) {
+    const query = `
+      mutation UpdateProfile($input: UpdateProfileInput!) {
+        updateProfile(input: $input) {
+          id
+          display_name
+          short_bio
+          thumbnail
+          about
+        }
+      }
+    `;
+    const data = await this.request<{ updateProfile: unknown }>(query, {
+      input: {
+        display_name: displayName,
+        short_bio: shortBio,
+      },
+    }, VELOG_V3_ENDPOINT);
+    return data.updateProfile;
+  }
+
   async getSeriesList(username: string) {
     const query = `
       query UserSeriesList($username: String!) {
