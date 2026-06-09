@@ -125,7 +125,40 @@ Antigravity의 MCP 설정 파일(`mcp_config.json`)에 서버를 등록합니다
 "velog에 '오늘의 TIL'이라는 제목으로 글 쓰고 썸네일로 'https://example.com/thumb.png' 지정해줘"
 "내 벨로그 프로필의 한 줄 소개를 '매일 성장하는 개발자'로 변경해줘"
 "velog에서 TypeScript 관련 글 검색해줘"
+"로컬 경로 '/Users/ddukddi/notes/my_post.md' 파일을 읽어서 Velog에 포스팅해줘"
 ```
+
+### 로컬 마크다운 파일 발행 (`publish_local_markdown`) 사용법
+
+로컬에 작성한 마크다운 파일(`.md`)을 읽어와서 자동으로 제목과 태그를 파싱한 뒤 Velog에 바로 게시할 수 있습니다.
+
+#### 1. 마크다운 파일 형식 (YAML Frontmatter 지원)
+게시글의 메타데이터(제목, 태그, 썸네일, 공개 여부)를 설정하기 위해 파일 상단에 YAML 형식의 Frontmatter를 추가하거나, 일반 마크다운 파일처럼 첫 번째 H1 헤더(`# 제목`)로 제목을 설정할 수 있습니다.
+
+**예시 1: YAML Frontmatter 적용 (권장)**
+```markdown
+---
+title: "나의 첫 번째 MCP 블로그 글"
+tags: [MCP, Velog, AI]
+is_private: false
+thumbnail: "https://example.com/thumbnail.png"
+---
+
+여기에 본문 내용을 작성합니다.
+```
+
+**예시 2: 일반 마크다운 형식**
+```markdown
+# 나의 첫 번째 MCP 블로그 글
+
+여기에 본문 내용을 작성합니다.
+```
+*이 경우 제목은 `나의 첫 번째 MCP 블로그 글`로 설정되며 본문에서는 해당 제목 헤더가 자동으로 제외되어 깔끔하게 등록됩니다.*
+
+#### 2. 에이전트 호출 명령 예시
+Antigravity 에디터 대화창 또는 MCP 클라이언트에 다음과 같이 요청해 보세요.
+* "로컬 경로 `/Users/ddukddi/notes/my_post.md` 파일을 읽어서 Velog에 포스팅해줘"
+* "내 마크다운 파일 `/path/to/file.md` 내용을 블로그 형식으로 다듬은 다음에 Velog에 발행해줘"
 
 ## 플랫폼 지원
 
