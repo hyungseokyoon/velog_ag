@@ -1,6 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import * as fs from "fs/promises";
+import * as path from "path";
 import { VelogClient } from "./velog-client.js";
 import { loadTokens, loginAndExtractTokens } from "./auth.js";
 
@@ -233,6 +235,97 @@ server.tool(
     return { content: [{ type: "text", text: JSON.stringify(profile, null, 2) }] };
   },
 );
+
+function parseLocalMarkdown(content: string) {
+  let title = "";
+  let tags: string[] = [];
+  let body = content;
+  let thumbnail: string | undefined = undefined;
+  let is_private = false;
+
+  const frontmatterMatch = content.match(/^---\r?\n([\s\S]+?)\r?\n---/);
+  if (frontmatterMatch) {
+    const yaml = frontmatterMatch[1];
+    body = content.slice(frontmatterMatch[0].length).trim();
+
+    const lines = yaml.split("\n");
+    for (const line of lines) {
+      const colonIndex = line.indexOf(":");
+      if (colonIndex !== -1) {
+        const key = line.slice(0, colonIndex).trim();
+        const value = line.slice(colonIndex + 1).trim().replace(/^['"]|['"]$/g, "");
+        if (key === "title") {
+          title = value;
+        } else if (key === "tags") {
+          if (value.startsWith("[") && value.endsWith("]")) {
+            tags = value.slice(1, -1).split(",").map(t => t.trim().replace(/^['"]|['"]$/g, "")).filter(Boolean);
+          } else {
+            tags = value.split(",").map(t => t.trim().replace(/^['"]|['"]$/g, "")).filter(Boolean);
+          }
+        } else if (key === "thumbnail") {
+          thumbnail = value;
+        } else if (key === "is_private" || key === "private") {
+          is_private = value === "true";
+        }
+      }
+    }
+  }
+
+  if (!title) {
+    const h1Match = body.match(/^#\s+(.+)$/m);
+    if (h1Match) {
+      title = h1Match[1].trim();
+      body = body.replace(h1Match[0], "").trim();
+    }
+  }
+
+  return { title, body, tags, thumbnail, is_private };
+}
+
+server.tool(
+  "publish_local_markdown",
+  "Publish a local markdown file as a Velog post (requires authentication)",
+  {
+    filePath: z.string().describe("Absolute path to the local markdown file to publish"),
+    title: z.string().optional().describe("Override title. If not provided, parsed from frontmatter or first H1 header."),
+    tags: z.array(z.string()).optional().describe("Override tags. If not provided, parsed from frontmatter."),
+    is_private: z.boolean().optional().describe("Override privacy setting. If not provided, parsed from frontmatter (default: false)."),
+    thumbnail: z.string().optional().describe("Override thumbnail image URL. If not provided, parsed from frontmatter."),
+  },
+  async ({ filePath, title, tags, is_private, thumbnail }) => {
+    const authError = requireAuth();
+    if (authError) return authError;
+
+    try {
+      const fileContent = await fs.readFile(filePath, "utf-8");
+      const parsed = parseLocalMarkdown(fileContent);
+
+      const finalTitle = title || parsed.title || path.basename(filePath, path.extname(filePath));
+      const finalBody = parsed.body;
+      const finalTags = tags || parsed.tags;
+      const finalIsPrivate = is_private !== undefined ? is_private : parsed.is_private;
+      const finalThumbnail = thumbnail || parsed.thumbnail;
+
+      const slug = finalTitle.replace(/[^a-zA-Z0-9가-힣\s-]/g, "").replace(/\s+/g, "-").toLowerCase();
+      const post = await client.writePost({
+        title: finalTitle,
+        body: finalBody,
+        tags: finalTags,
+        is_private: finalIsPrivate,
+        url_slug: slug,
+        thumbnail: finalThumbnail,
+      });
+
+      return { content: [{ type: "text", text: JSON.stringify(post, null, 2) }] };
+    } catch (err) {
+      return {
+        content: [{ type: "text", text: `Failed to publish local markdown file: ${err instanceof Error ? err.message : String(err)}` }],
+        isError: true,
+      };
+    }
+  }
+);
+
 
 // ── Start server ──
 

@@ -73,6 +73,7 @@ Antigravity의 MCP 설정 파일(`mcp_config.json`)에 서버를 등록합니다
 | `edit_post` | 기존 글 수정 | `id`, `title?`, `body?`, `tags?`, `is_private?`, `thumbnail?` |
 | `delete_post` | 글 삭제 | `id` |
 | `update_profile` | 사용자 프로필 수정 | `display_name?`, `short_bio?` |
+| `publish_local_markdown` | 로컬 마크다운 파일 직접 발행 | `filePath`, `title?`, `tags?`, `is_private?`, `thumbnail?` |
 
 ## 인증
 
@@ -149,6 +150,7 @@ npm run build
 
 - **프로필 수정 기능 추가 (`update_profile`):** 로그인된 사용자의 이름(`display_name`) 및 한 줄 소개(`short_bio`)를 수정할 수 있는 기능을 추가했습니다. 파라미터가 생략된 경우 현재의 프로필 값을 안전하게 유지하며 업데이트합니다.
 - **글 작성 및 수정 시 썸네일(Thumbnail) 파라미터 지원:** `write_post` 및 `edit_post` 도구에 `thumbnail` 매개변수를 추가하여 글의 커버 이미지를 외부 URL로 바로 등록할 수 있도록 개선했습니다.
+- **로컬 마크다운 파일 직접 발행 기능 추가 (`publish_local_markdown`):** 로컬 경로에 있는 `.md` 파일을 읽어 Velog 글을 작성할 수 있는 기능을 추가했습니다. 마크다운 파일 상단의 YAML Frontmatter 정보(title, tags, thumbnail, is_private) 또는 첫 번째 H1 헤더(# 제목)를 자동으로 파싱하여 글 제목 및 태그로 연동합니다.
 
 ## 주의사항
 
